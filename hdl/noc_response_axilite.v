@@ -166,7 +166,8 @@ reg                          msg_data_done;
 reg  [2:0]                   msg_state_f;
 reg  [2:0]                   msg_state_next;
 reg  [`MSG_LENGTH_WIDTH-1:0] msg_payload_len;
-reg  [`MSG_LENGTH_WIDTH-1:0] msg_counter;
+reg  [`MSG_LENGTH_WIDTH-1:0] msg_counter_next;
+reg  [`MSG_LENGTH_WIDTH-1:0] msg_counter_f;
 
 
 // Should we read data from noc_data_in?
@@ -176,15 +177,18 @@ always @(posedge clk)
 begin
     if (rst) begin
         msg_state_f <= MSG_STATE_HEADER_0;
+        msg_counter_f <= `MSG_LENGTH_WIDTH'b0;
     end
     else begin
         msg_state_f <= msg_state_next;
+        msg_counter_f <= msg_counter_next;
     end
 end
 
 always @(*)
 begin
     msg_state_next = msg_state_f;
+    msg_counter_next = msg_counter_f;
     msg_data_done = 1'b0;
     case (msg_state_f)
         MSG_STATE_HEADER_0: begin
@@ -200,19 +204,19 @@ begin
                     msg_state_next = MSG_STATE_DATA;
                 end
 
-                msg_counter = `MSG_LENGTH_WIDTH'd0;
+                msg_counter_next = `MSG_LENGTH_WIDTH'd0;
                 msg_payload_len = noc_data_in[`MSG_LENGTH];
             end
         end
         MSG_STATE_DATA: begin
-            if (msg_counter >= msg_payload_len) begin
+            if (msg_counter_f >= msg_payload_len) begin
                 msg_data_done = 1'b1;
                 msg_state_next = MSG_STATE_HEADER_0;
                 msg_payload_len = `MSG_LENGTH_WIDTH'd0;
-                msg_counter = `MSG_LENGTH_WIDTH'd0;
+                msg_counter_next = `MSG_LENGTH_WIDTH'd0;
             end
             else begin
-                msg_counter = (noc_io_go) ? msg_counter + 1'b1 : msg_counter;
+                msg_counter_next = (noc_io_go) ? msg_counter_f + 1'b1 : msg_counter_f;
             end
         end
     endcase
@@ -279,7 +283,7 @@ generate
 
                 if (msg_state_f == MSG_STATE_DATA && noc_io_go && !full)
                 begin
-                    data[msg_counter*`NOC_DATA_WIDTH +: `NOC_DATA_WIDTH] = noc_data_in;
+                    data[msg_counter_f*`NOC_DATA_WIDTH +: `NOC_DATA_WIDTH] = noc_data_in;
                 end
 
                 if (msg_data_done) begin
@@ -293,6 +297,6 @@ endgenerate
 
 assign m_axi_rvalid = ren;
 assign m_axi_rdata = rdata;
-assign m_axi_rresp = {AXI_LITE_RESP_WIDTH{1'b1}};
+assign m_axi_rresp = {AXI_LITE_RESP_WIDTH{1'b0}};
 
 endmodule

@@ -80,42 +80,42 @@ async def read_address_4(dut):
     dut._log.info("Read: 0x%08X From Address: 0x%08X" % (int(value), ADDRESS))
 
 
-# @cocotb.test()
-# async def write_and_read(dut):
-#     """Write to the register at address 0.
-#     Read back from that register and verify the value is the same.
-# 
-#     Test ID: 2
-# 
-#     Expected Results:
-#         The contents of the register is the same as the value written.
-#     """
-# 
-#     # Reset
-#     dut.rst <= 1
-#     dut.test_id <= 2
-#     axim = AXI4LiteMaster(dut, "AXIML", dut.clk)
-#     setup_dut(dut)
-#     await Timer(CLK_PERIOD_NS * 10, units='ns')
-#     dut.rst <= 0
-# 
-#     ADDRESS = 0x00
-#     DATA = 0xAB
-# 
-#     # Write to the register
-#     await axim.write(ADDRESS, DATA)
-#     await Timer(CLK_PERIOD_NS * 10, units='ns')
-# 
-#     # Read back the value
-#     value = await axim.read(ADDRESS)
-#     await Timer(CLK_PERIOD_NS * 10, units='ns')
-# 
-#     value = dut.dut.r_temp_0
-#     assert value == DATA, ("Register at address 0x%08X should have been "
-#                            "0x%08X but was 0x%08X" % (ADDRESS, DATA, int(value)))
-#     dut._log.info("Write 0x%08X to address 0x%08X" % (int(value), ADDRESS))
-# 
-# 
+@cocotb.test()
+async def write_and_read(dut):
+    """Write to the register at address 0.
+    Read back from that register and verify the value is the same.
+
+    Test ID: 2
+
+    Expected Results:
+        The contents of the register is the same as the value written.
+    """
+
+    # Reset
+    dut.rst <= 1
+    dut.test_id <= 2
+    axim = AXI4LiteMaster(dut, "AXIML", dut.clk)
+    setup_dut(dut)
+    await Timer(CLK_PERIOD_NS * 10, units='ns')
+    dut.rst <= 0
+
+    ADDRESS = 0x00
+    DATA = 0xAB
+
+    # Write to the register
+    await axim.write(ADDRESS, DATA)
+    await Timer(CLK_PERIOD_NS * 10, units='ns')
+
+    # Read back the value
+    value = await axim.read(ADDRESS)
+    await Timer(CLK_PERIOD_NS * 10, units='ns')
+
+    # value = dut.dut.r_temp_0
+    assert value == DATA, ("Register at address 0x%08X should have been "
+                           "0x%08X but was 0x%08X" % (ADDRESS, DATA, int(value)))
+    dut._log.info("Write 0x%08X to address 0x%08X" % (int(value), ADDRESS))
+
+
 # @cocotb.test()
 # async def write_fail(dut):
 #     """Attempt to write data to an address that doesn't exist.
