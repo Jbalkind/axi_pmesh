@@ -1,7 +1,7 @@
 `include "define.tmp.h"
 
 module axilite_noc_bridge #(
-    parameter AXI_LITE_DATA_WIDTH = 512
+    parameter AXI_LITE_DATA_WIDTH = 64
 ) (
     input  wire                                   clk,
     input  wire                                   rst,
@@ -208,9 +208,9 @@ noc_response_axilite #(
     .m_axi_rresp(m_axi_rresp),
     .m_axi_rvalid(m_axi_rvalid),
     .m_axi_rready(m_axi_rready),
-    .m_axi_bresp(),
-    .m_axi_bvalid(),
-    .m_axi_bready(1'b1),
+    .m_axi_bresp(m_axi_bresp),
+    .m_axi_bvalid(m_axi_bvalid),
+    .m_axi_bready(m_axi_bready),
     .w_reqbuf_size(),
     .r_reqbuf_size()
 );
@@ -368,14 +368,14 @@ begin
         `MSG_TYPE_STORE: begin
             msg_type = `MSG_TYPE_NC_STORE_REQ; // axilite peripheral is writing to the memory?
             msg_length = 2'd2 + NOC_PAYLOAD_LEN; // 2 extra headers + 1 data
-            msg_data_size = `MSG_DATA_SIZE_64B; // fix it for now
+            msg_data_size = `MSG_DATA_SIZE_8B; // fix it for now
             msg_address = {{`MSG_ADDR_WIDTH-`PHY_ADDR_WIDTH{1'b0}}, awaddr_fifo_out[`PHY_ADDR_WIDTH-1:0]};
         end
 
         `MSG_TYPE_LOAD: begin
             msg_type = `MSG_TYPE_NC_LOAD_REQ; // axilite peripheral is reading from the memory?
             msg_length = 2'd2; // only 2 extra headers
-            msg_data_size = `MSG_DATA_SIZE_64B; // fix it for now. 
+            msg_data_size = `MSG_DATA_SIZE_8B; // fix it for now. 
             msg_address = {{`MSG_ADDR_WIDTH-`PHY_ADDR_WIDTH{1'b0}}, araddr_fifo_out[`PHY_ADDR_WIDTH-1:0]};
         end
         

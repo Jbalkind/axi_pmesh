@@ -3,7 +3,7 @@
 
 module tb_axi_responder #(
   parameter ADDR_WIDTH          = 64,
-  parameter DATA_WIDTH          = 512,
+  parameter DATA_WIDTH          = 64,
   parameter STROBE_WIDTH        = (DATA_WIDTH / 8)
 )(
 

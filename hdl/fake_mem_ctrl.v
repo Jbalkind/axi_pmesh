@@ -268,6 +268,7 @@ always @ *
 begin
     // initialize to get rid of msim warnings
     mem_temp = `NOC_DATA_WIDTH'h0;
+    msg_send_length = 8'b0;
     sim_memory_rd_addr = MEM_BASE;
     sim_memory_write = 1'b0;
     sim_memory_wr_addr = MEM_BASE;
@@ -411,8 +412,10 @@ begin
 `endif
                 msg_send_length = 8'd1;
             end
+`endif // ifndef PITON_SIM_MEMORY
             `MSG_DATA_SIZE_8B: 
             begin
+`ifndef PITON_SIM_MEMORY
 `ifndef PITON_DPI
                 $read_64b({{(`MEM_ADDR_WIDTH-`PHY_ADDR_WIDTH){1'b0}}, msg_addr[`L2_TAG], msg_addr[`L2_TAG_INDEX],msg_addr[5:3],3'b000}, msg_send_data[0]);
 `else // ifndef PITON_DPI
@@ -421,8 +424,14 @@ begin
 `ifndef MINIMAL_MONITORING
                 $display("NC_MemRead: %h : %h", {{(`MEM_ADDR_WIDTH-`PHY_ADDR_WIDTH){1'b0}},msg_addr[`L2_TAG],msg_addr[`L2_TAG_INDEX],msg_addr[5:3],3'b000}, msg_send_data[0]);
 `endif
+`else // ifndef PITON_SIM_MEMORY
+            sim_memory_rd_addr = {{(`MEM_ADDR_WIDTH-`PHY_ADDR_WIDTH){1'b0}}, msg_addr[`L2_TAG],msg_addr[`L2_TAG_INDEX],6'b000000} - MEM_BASE;
+            $display("fake_mem_ctrl.v: true read addr: %h", sim_memory_rd_addr);
+            msg_send_data[0] = sim_memory[sim_memory_rd_addr[63:6]][(msg_addr[5:0]*8)+:64];
+`endif // ifndef PITON_SIM_MEMORY
                 msg_send_length = 8'd1;
             end
+`ifndef PITON_SIM_MEMORY
             `MSG_DATA_SIZE_16B: 
             begin
 `ifndef PITON_DPI
@@ -563,6 +572,24 @@ begin
                 $display("MemWrite: %h : %h", {{(`MEM_ADDR_WIDTH-`PHY_ADDR_WIDTH){1'b0}}, msg_addr[`L2_TAG],msg_addr[`L2_TAG_INDEX],6'b101000}, buf_in_mem_f[8]);
                 $display("MemWrite: %h : %h", {{(`MEM_ADDR_WIDTH-`PHY_ADDR_WIDTH){1'b0}}, msg_addr[`L2_TAG],msg_addr[`L2_TAG_INDEX],6'b110000}, buf_in_mem_f[9]);
                 $display("MemWrite: %h : %h", {{(`MEM_ADDR_WIDTH-`PHY_ADDR_WIDTH){1'b0}}, msg_addr[`L2_TAG],msg_addr[`L2_TAG_INDEX],6'b111000}, buf_in_mem_f[10]);
+`endif
+            end
+            `MSG_DATA_SIZE_8B:
+            begin
+`ifdef PITON_DPI
+                write_64b_call({{(`MEM_ADDR_WIDTH-`PHY_ADDR_WIDTH){1'b0}}, msg_addr[`L2_TAG],msg_addr[`L2_TAG_INDEX],6'b000000},buf_in_mem_f[3]);
+`else // ifdef PITON_DPI
+`ifndef PITON_SIM_MEMORY
+                $write_64b({{(`MEM_ADDR_WIDTH-`PHY_ADDR_WIDTH){1'b0}}, msg_addr[`L2_TAG],msg_addr[`L2_TAG_INDEX],6'b000000}, buf_in_mem_f[3]);
+`else // ifndef PITON_SIM_MEMORY
+            sim_memory_write = 1'b1;
+            sim_memory_wr_addr = {{(`MEM_ADDR_WIDTH-`PHY_ADDR_WIDTH){1'b0}}, msg_addr[`L2_TAG],msg_addr[`L2_TAG_INDEX],6'b000000} - MEM_BASE;
+            $display("fake_mem_ctrl.v: true write addr: %h", sim_memory_wr_addr);
+            sim_memory_wr_data = (sim_memory[{msg_addr[`L2_TAG],msg_addr[`L2_TAG_INDEX]}] & (~(512'hffffffffffffffff << (msg_addr[5:0] * 8)))) | (buf_in_mem_f[3] << (msg_addr[5:0] * 8));
+`endif // ifndef PITON_SIM_MEMORY
+`endif // ifdef PITON_DPI
+`ifndef MINIMAL_MONITORING
+                $display("MemWrite: %h : %h", {{(`MEM_ADDR_WIDTH-`PHY_ADDR_WIDTH){1'b0}}, msg_addr[`L2_TAG],msg_addr[`L2_TAG_INDEX],6'b000000}, buf_in_mem_f[3]);
 `endif
             end
 `ifndef PITON_SIM_MEMORY

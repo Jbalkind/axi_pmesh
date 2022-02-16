@@ -190,14 +190,31 @@ begin
     msg_state_next = msg_state_f;
     msg_counter_next = msg_counter_f;
     msg_data_done = 1'b0;
+    m_axi_bresp = {AXI_LITE_RESP_WIDTH{1'b0}};
+    m_axi_bvalid = 1'b0;
     case (msg_state_f)
         MSG_STATE_HEADER_0: begin
-            if (noc_io_go && (noc_data_in[`MSG_TYPE] == `MSG_TYPE_NC_LOAD_MEM_ACK ||
-                    noc_data_in[`MSG_TYPE] == `MSG_TYPE_NC_STORE_MEM_ACK)) begin
+            if (noc_io_go && (noc_data_in[`MSG_TYPE] == `MSG_TYPE_NC_LOAD_MEM_ACK)) begin
                 
                 if (noc_data_in[`MSG_LENGTH] == `MSG_LENGTH_WIDTH'd0) 
                 begin
                     msg_state_next = MSG_STATE_HEADER_0;
+                end
+                else
+                begin
+                    msg_state_next = MSG_STATE_DATA;
+                end
+
+                msg_counter_next = `MSG_LENGTH_WIDTH'd0;
+                msg_payload_len = noc_data_in[`MSG_LENGTH];
+            end
+            else if (noc_io_go && (noc_data_in[`MSG_TYPE] == `MSG_TYPE_NC_STORE_MEM_ACK)) begin
+                
+                if (noc_data_in[`MSG_LENGTH] == `MSG_LENGTH_WIDTH'd0) 
+                begin
+                    msg_state_next = MSG_STATE_HEADER_0;
+                    m_axi_bresp = {AXI_LITE_RESP_WIDTH{1'b0}};
+                    m_axi_bvalid = 1'b1;
                 end
                 else
                 begin
